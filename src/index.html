@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+  <meta name="viewport" content="width=device-width, user-scalable=no"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <!-- compiled CSS --><% desktopStyles.forEach( function ( file ) { %>
+  <link rel="stylesheet" type="text/css" href="<%= file %>" /><% }); %>
+
+  <!-- compiled CSS -->
+  <% mobileStyles.forEach( function ( file ) { %>
+  <link rel="stylesheet" type="text/css" media="screen and (max-device-width: 768px) and (orientation: portrait),screen and (max-device-width: 1024px) and (orientation: landscape)" href="<%= file %>" /><% }); %>
+
+  <script src="vendor/modernizr/modernizr.js"></script>
+  <!-- requirejs bootstrap -->
+  <script data-main="src/main.js" src="vendor/requirejs/require.js"></script>
+</head>
+<body>
+ <div id="viewer">
+   <div class="screen" id="splash-screen">
+     <h1 class="logo">RCS Viewer Loading...</h1>
+   </div>
+   <div class="screen" id="home-screen">
+      <h1>WebGL Stuff</h1>
+   </div>
+</div>
+</body>
+</html>

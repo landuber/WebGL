@@ -1,0 +1,114 @@
+/**
+ * This is the main application stylesheet. It should include or import all
+ * stylesheets used throughout the application as this is the only stylesheet in
+ * the Grunt configuration that is automatically processed.
+ */
+
+/**
+ Importing compass css3 module
+*/
+@import "compass/css3";
+@import "compass/reset";
+@import "compass/utilities";
+
+/*
+html5 resets
+*/
+@include reset-html5;
+
+/**
+ * This is our main variables file. It in turn imports the `variables` file from
+ * Twitter Bootstrap. We must include it last so we can overwrite any variable
+ * definitions in our imported stylesheets.
+ */
+
+@import "variables";
+
+@font-face {
+    font-family: "Slackey";
+    font-weight: normal;
+    font-style: normal;
+    src: url("fonts/Slackey.ttf") format("truetype");
+}
+
+
+@font-face {
+    font-family: "Geo";
+    font-weight: normal;
+    font-style: normal;
+    src: url("fonts/Geo-Regular.ttf") format("truetype");
+}
+
+
+#viewer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-size: 40px;
+    height: 100%;
+    background-color: rgb(30, 30, 30);
+    font-family: Geo;
+    color: rgb(200, 200, 100);
+    .screen {
+        width: 100%;
+        height: 100%;
+        display: none;
+        z-index: 10;
+        &.active {
+            display: block;
+        }
+    }
+}
+
+#splash-screen {
+    text-align: center;
+    .continue {
+        cursor: pointer;
+        font-size: 0.75em;
+        display: inline-block;
+        margin-top: 0.75em;
+    }
+}
+
+
+
+.logo {
+    font-family: Slackey;
+    font-size: 1.5em;
+    line-height: 0.9em;
+    margin-top: 2.5em;
+    text-align: center;
+    color: rgb(70, 120, 20);
+    text-shadow: 0.03em 0.03em 0.03em rgb(255, 255, 255), -0.03em -0.03em 0.03em rgb(255, 255, 0), 0.1em 0.15em 0.15em rgb(0, 0, 0);
+}
+
+
+ul.menu {
+    text-align: center;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    li {
+        margin: 0.8em 0;
+        button {
+            font-family: Slackey, sans-serif;
+            font-size: 0.6em;
+            color: rgb(100, 120, 0);
+            width: 10em;
+            height: 1.5em;
+            background: rgb(10, 20, 0);
+            border: 0.1em solid rgb(255, 255, 0);
+            border-radius: 0.5em;
+            -webkit-box-shadow: 0.2em 0.2em 0.3em rgb(0, 0, 0);
+            -moz-box-shadow: 0.2em 0.2em 0.3em rgb(0, 0, 0);
+            box-shadow: 0.2em 0.2em 0.3em rgb(0, 0, 0);
+            &:hover {
+                background: rgb(30, 40, 0);
+            }
+            &:active {
+                color: rgb(255, 255, 0);
+                background: rgb(30, 40, 0);
+            }
+        }
+    }
+}

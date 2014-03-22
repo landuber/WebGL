@@ -1,0 +1,12 @@
+*.sw*
+.*.sw*
+*~
+.sass-cache/
+build/
+bin/
+node_modules/
+_*
+_*/
+.DS_Store*
+.DS_Store
+**/.DS_Store*
