@@ -12,6 +12,7 @@
   <link rel="stylesheet" type="text/css" media="screen and (max-device-width: 768px) and (orientation: portrait),screen and (max-device-width: 1024px) and (orientation: landscape)" href="<%= file %>" /><% }); %>
 
   <script src="vendor/modernizr/modernizr.js"></script>
+
   <!-- requirejs bootstrap -->
   <script data-main="src/main.js" src="vendor/requirejs/require.js"></script>
 </head>
@@ -21,8 +22,14 @@
      <h1 class="logo">RCS Viewer Loading...</h1>
    </div>
    <div class="screen" id="home-screen">
-      <h1>WebGL Stuff</h1>
+      <canvas style="margin-left:50px; margin-top:50px;" id="webgl" width="400" height="500">
+        Please use the browser supporting "canvas"
+      </canvas>
    </div>
 </div>
+  <script src="vendor/webgl-lib/webgl-utils.js"></script>
+  <script src="vendor/webgl-lib/webgl-debug.js"></script>
+  <script src="vendor/webgl-lib/cuon-utils.js"></script>
+  <script src="vendor/webgl-lib/cuon-matrix.js"></script>
 </body>
 </html>

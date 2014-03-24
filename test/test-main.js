@@ -11,36 +11,14 @@ require.config({
 
     paths: {
         //test libraries
-        'chai': '../../vendor/chai/chai',
-        'sinon-chai': '../../vendor/sinon-chai/lib/sinon-chai',
-        'sinon': '../../vendor/sinon/sinon',
+        //'chai': '../../vendor/chai/chai',
+        //'sinon-chai': '../../vendor/sinon-chai/lib/sinon-chai',
+        //'sinon': '../../vendor/sinon/sinon',
 
         // application libraries
         'jquery': '../../vendor/jquery/jquery',
         'q': '../../vendor/q/q',
-        'lodash': '../../vendor/lodash/dist/lodash',
-        'webglUtils': '../../vendor/webgl-lib/webgl-utils',
-        'webglDebug': '../../vendor/webgl-lib/webgl-debug',
-        'cuonUtils': '../../vendor/webgl-lib/cuon-utils',
-        'cuonMatrix': '../../vendor/webgl-lib/cuon-matrix'
-    },
-
-    shim: {
-        'sinon': {
-            exports: 'sinon'
-        },
-        'webglUtils': {
-            exports: 'webglUtils'
-        },
-        'webglDebug': {
-            exports: 'webglDebug'
-        },
-        'cuonUtils': {
-            exports: 'cuonUtils'
-        },
-        'cuonMatrix': {
-            exports: 'cuonMatrix'
-        }
+        'lodash': '../../vendor/lodash/dist/lodash'
     },
 
     // ask Require.js to load these files (all our tests)

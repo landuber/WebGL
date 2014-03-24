@@ -38,8 +38,8 @@ module.exports = {
    */
   test_files: {
     js: [
-     'vendor/chai/chai.js',
-     'vendor/sinon/sinon.js'
+     //'vendor/chai/chai.js',
+     //'vendor/sinon/sinon.js'
     ]
   },
 
@@ -91,8 +91,8 @@ module.exports = {
   ],
 
   karma_test_files: [
-     'vendor/chai/chai.js',
-     'vendor/sinon/sinon.js',
-     'vendor/sinon-chai/lib/sinon-chai.js'
+     //'vendor/chai/chai.js',
+     //'vendor/sinon/sinon.js',
+     //'vendor/sinon-chai/lib/sinon-chai.js'
     ]
 };

@@ -21,8 +21,9 @@ module.exports = function ( karma ) {
     exclude: [
       'src/main.js'
     ],
-    frameworks: [ 'mocha', 'requirejs' ],
-    plugins: [ 'karma-mocha', 
+    frameworks: [ 'mocha', 'requirejs', 'chai-sinon'],
+    plugins: [ 'karma-mocha',
+               'karma-chai-sinon',
                'karma-requirejs', 
                'karma-firefox-launcher', 
                'karma-chrome-launcher', 
@@ -52,14 +53,14 @@ module.exports = function ( karma ) {
      * On which port should the browser connect, on which port is the test runner
      * operating, and what is the URL path for the browser to use.
      */
-    port: 9018,
+    //port: 9019,
     runnerPort: 9100,
     urlRoot: '/',
 
     /** 
      * Disable file watching by default.
      */
-    autoWatch: false,
+    autoWatch: true,
 
     /**
      * The list of browsers to launch to test on. This includes only "Firefox" by
@@ -75,7 +76,7 @@ module.exports = function ( karma ) {
      * the aesthetic advantage of not launching a browser every time you save.
      */
     browsers: [
-      'Chrome'
+      'ChromeCanary'
     ]
   });
 };
