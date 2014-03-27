@@ -4,7 +4,8 @@
   "devDependencies": {
     "modernizr": "~2.7.1",
     "sinon-chai": "~2.4.0",
-    "threejs": "*"
+    "threejs": "*",
+    "gl-matrix": "~2.2.1"
   },
   "dependencies": {
     "bootstrap-sass": "*",

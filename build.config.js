@@ -71,7 +71,8 @@ module.exports = {
       'vendor/webgl-lib/webgl-utils.js',
       'vendor/webgl-lib/webgl-debug.js',
       'vendor/webgl-lib/cuon-utils.js',
-      'vendor/webgl-lib/cuon-matrix.js' 
+      'vendor/webgl-lib/cuon-matrix.js',
+      'vendor/gl-matrix/dist/gl-matrix.js'
     ],
     css: [
     ],
@@ -87,7 +88,8 @@ module.exports = {
      'vendor/webgl-lib/webgl-utils.js',
      'vendor/webgl-lib/webgl-debug.js',
      'vendor/webgl-lib/cuon-utils.js',
-     'vendor/webgl-lib/cuon-matrix.js'
+     'vendor/webgl-lib/cuon-matrix.js',
+     'vendor/gl-matrix/dist/gl-matrix.js'
   ],
 
   karma_test_files: [

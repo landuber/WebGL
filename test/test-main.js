@@ -18,7 +18,8 @@ require.config({
         // application libraries
         'jquery': '../../vendor/jquery/jquery',
         'q': '../../vendor/q/q',
-        'lodash': '../../vendor/lodash/dist/lodash'
+        'lodash': '../../vendor/lodash/dist/lodash',
+        'glm': '../../vendor/gl-matrix/dist/gl-matrix'
     },
 
     // ask Require.js to load these files (all our tests)

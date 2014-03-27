@@ -1,26 +1,88 @@
-define(['lodash', 'q', 'common/viewUtil', 'facades/boardFacade'],
-    function(_, Q, viewUtil, boardFacade) {
+define(['lodash', 'q', 'glm', 'common/viewUtil', 'facades/boardFacade'],
+    function(_, Q, matrixUtil, viewUtil, boardFacade) {
 
         var g_points = [],
             g_colors = [];
+
         // Vertext Shader Program
         var VSHADER_SOURCE =
             'attribute vec4 a_Position;\n' +
-            'uniform float u_CosB, u_SinB;' +
+            'attribute vec4 a_Color;\n' +
+            'uniform mat4 u_ViewMatrix;\n' +
+            'uniform mat4 u_ModelMatrix;\n' +
+            'uniform mat4 u_ProjMatrix;\n' +
+            'varying vec4 v_Color;\n' +
             'void main() {\n' +
-            '   gl_Position.x = a_Position.x * u_CosB - a_Position.y * u_SinB;\n' +
-            '   gl_Position.y = a_Position.x * u_SinB + a_Position.y * u_CosB;\n' +
-            '   gl_Position.z = a_Position.z;\n' +
-            '   gl_Position.w = 1.0;\n' +
+            '   gl_Position = u_ProjMatrix * u_ViewMatrix * u_ModelMatrix * a_Position;\n' +
+            '   v_Color = a_Color;\n' +
             '}\n';
 
         // Fragment shader program
         var FSHADER_SOURCE =
             'precision mediump float;\n' +
-            'uniform vec4 u_FragColor;\n' +
+            'varying vec4 v_Color;\n' +
             'void main() {\n' +
-            '   gl_FragColor = u_FragColor;\n' + // Set the color
+            '   gl_FragColor = v_Color;\n' + // Set the color
         '}\n';
+
+        // Init buffers
+        function _initBufferVertices(gl) {
+            var verticesColors = new Float32Array([
+                // vertex coordinates and color
+                0.0, 0.5, -0.4, 0.4, 1.0, 0.4, -0.5, -0.5, -0.4, 0.4, 1.0, 0.4,
+                0.5, -0.5, -0.4, 1.0, 0.4, 0.4,
+                0.5, 0.4, -0.2, 1.0, 0.4, 0.4, -0.5, 0.4, -0.2, 1.0, 1.0, 0.4,
+                0.0, -0.6, -0.2, 1.0, 1.0, 0.4,
+                0.0, 0.5, 0.0, 0.4, 0.4, 1.0, -0.5, -0.5, 0.0, 0.4, 0.4, 1.0,
+                0.5, -0.5, 0.0, 1.0, 0.4, 0.4
+            ]);
+
+            var FSIZE = verticesColors.BYTES_PER_ELEMENT;
+            var n = 9;
+
+            var vertextColorBuffer = gl.createBuffer();
+            if (!vertextColorBuffer) {
+                console.log('Failed to create a buffer object');
+                return -1;
+            }
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertextColorBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, verticesColors, gl.STATIC_DRAW);
+
+            var a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+            gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 6 * FSIZE, 0);
+            gl.enableVertexAttribArray(a_Position);
+
+            var a_Color = gl.getAttribLocation(gl.program, 'a_Color');
+            gl.vertexAttribPointer(a_Color, 3, gl.FLOAT, false, 6 * FSIZE, 3 * FSIZE);
+            gl.enableVertexAttribArray(a_Color);
+
+            return n;
+        }
+
+        function _initViewMatrix(gl) {
+            var u_ViewMatrix = gl.getUniformLocation(gl.program, 'u_ViewMatrix');
+
+            var viewMatrix = new Matrix4();
+            viewMatrix.setLookAt(0.20, 0.25, 0.25, 0, 0, 0, 0, 0, 1);
+
+            gl.uniformMatrix4fv(u_ViewMatrix, false, viewMatrix.elements);
+
+        }
+
+        function _initModelMatrix(gl) {  
+            var u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_ModelMatrix');
+
+            var modelMatrix = new Matrix4();
+            modelMatrix.setRotate(-80, 0, 0, 1);
+            gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+        }
+
+        function _initProjMatrix(gl) {
+            var u_ProjMatrix = gl.getUniformLocation(gl.program, 'u_ProjMatrix');
+
+            var projMatrix = new Matrix4();
+            projMatrix.setOrtho();
+        }
 
         // Public Methods
         function load() {
@@ -33,114 +95,23 @@ define(['lodash', 'q', 'common/viewUtil', 'facades/boardFacade'],
                     console.log('Failed to get the rendering context for WebGL');
                     return;
                 }
-
-
                 //Initialize shaders
                 if (!initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE)) {
                     console.log('Failed to initialize shaders');
                     return;
                 }
 
-                var u_FragColor = gl.getUniformLocation(gl.program, 'u_FragColor');
-                if (!u_FragColor) {
-                    console.log('Failed to get u_FragColor variable');
-                    return;
-                }
+                var n = _initBufferVertices(gl);
+                _initModelMatrix(gl);
+                _initViewMatrix(gl);
 
-                gl.clearColor(0.0, 0.0, 0.0, 1.0);
-                gl.clear(gl.COLOR_BUFFER_BIT);
-
-                initVertexBuffers(gl, u_FragColor);
-
-
-                canvas.onmousedown = function(ev) {
-                    click(ev, gl, canvas, u_FragColor);
-                };
-
+                gl.drawArrays(gl.TRIANGLES, 0, n);
 
                 viewUtil.showScreen('home-screen');
             });
         }
 
-        function click(ev, gl, canvas, u_FragColor) {
 
-            // Get the storage location of attribute variable
-            var a_Position = gl.getAttribLocation(gl.program, 'a_Position');
-
-            if (a_Position < 0) {
-                console.log('Failed to get the storage location of a_Position');
-                return;
-            }
-
-            var x = ev.clientX;
-            var y = ev.clientY;
-
-            var rect = ev.target.getBoundingClientRect();
-
-            x = ((x - rect.left) - canvas.width / 2) / (canvas.width / 2);
-            y = (canvas.height / 2 - (y - rect.top)) / (canvas.height / 2);
-
-            g_points.push([x, y]);
-
-            if (x >= 0.0 && y >= 0.0) {
-                g_colors.push([1.0, 0.0, 0.0, 1.0]);
-            } else if (x < 0.0 && y < 0.0) {
-                g_colors.push([0.0, 1.0, 0.0, 1.0]);
-            } else {
-                g_colors.push([1.0, 1.0, 1.0, 1.0]);
-            }
-
-
-            gl.clear(gl.COLOR_BUFFER_BIT);
-
-            var len = g_points.length;
-            for (var i = 0; i < len; i++) {
-                var xy = g_points[i];
-                var rgba = g_colors[i];
-
-                gl.vertexAttrib3f(a_Position, xy[0], xy[1], 0.0);
-
-
-                gl.uniform4f(u_FragColor, rgba[0], rgba[1], rgba[2], rgba[3]);
-                // Draw a point 
-                gl.drawArrays(gl.POINTS, 0, 1);
-            }
-        }
-
-        function initVertexBuffers(gl, u_FragColor) {
-
-            gl.uniform4f(u_FragColor, 1.0, 1.0, 0.0, 1.0);
-            var vertices = new Float32Array([-0.5, 0.5, -0.5, -0.5, 0.5, 0.5, 0.5, -0.5]);
-
-            var vertexBuffer = gl.createBuffer();
-            if (!vertexBuffer) {
-                console.log("Failed to create a vertex buffer.");
-                return -1;
-            }
-
-            //bind the buffer
-            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-
-            var a_Position = gl.getAttribLocation(gl.program, 'a_Position');
-
-            gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 0, 0);
-            gl.enableVertexAttribArray(a_Position);
-
-            ininRotationParams(gl);
-            gl.drawArrays(gl.TRIANGLES, 0, 3);
-        }
-
-        function ininRotationParams(gl) {
-            var ANGLE = 90; // degrees
-            var radian = Math.PI * ANGLE / 180;
-
-            var u_SinB = gl.getUniformLocation(gl.program, 'u_SinB');
-            var u_CosB = gl.getUniformLocation(gl.program, 'u_CosB');
-
-            gl.uniform1f(u_SinB, Math.sin(radian));
-            gl.uniform1f(u_CosB, Math.cos(radian));
-        }
 
         return {
             load: load

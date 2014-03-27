@@ -3,6 +3,7 @@
 *~
 .sass-cache/
 build/
+coverage/
 bin/
 node_modules/
 _*

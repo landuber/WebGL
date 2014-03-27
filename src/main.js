@@ -4,7 +4,8 @@ requirejs.config({
     paths: {
         'jquery': '../../vendor/jquery/jquery',
         'q': '../../vendor/q/q',
-        'lodash': '../../vendor/lodash/dist/lodash'
+        'lodash': '../../vendor/lodash/dist/lodash',
+        'glm': '../../vendor/gl-matrix/dist/gl-matrix'
     }
 });
 
@@ -14,5 +15,7 @@ define('modernizr', [], Modernizr);
 
 define(['viewer', 'common/viewUtil'], function(viewer, viewUtil) {
     viewUtil.showScreen('splash-screen');
-    viewer.initialize();
+    viewer.initialize().fail(function(error) {
+         console.log(error);
+    });
 });
