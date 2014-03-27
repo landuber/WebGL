@@ -4,6 +4,8 @@ define(['lodash', 'q', 'glm', 'common/viewUtil', 'facades/boardFacade'],
         var g_points = [],
             g_colors = [];
 
+        var canvas;
+
         // Vertext Shader Program
         var VSHADER_SOURCE =
             'attribute vec4 a_Position;\n' +
@@ -29,11 +31,14 @@ define(['lodash', 'q', 'glm', 'common/viewUtil', 'facades/boardFacade'],
         function _initBufferVertices(gl) {
             var verticesColors = new Float32Array([
                 // vertex coordinates and color
-                0.0, 0.5, -0.4, 0.4, 1.0, 0.4, -0.5, -0.5, -0.4, 0.4, 1.0, 0.4,
+                0.0, 0.5, -0.4, 0.4, 1.0, 0.4, 
+               -0.5, -0.5, -0.4, 0.4, 1.0, 0.4,
                 0.5, -0.5, -0.4, 1.0, 0.4, 0.4,
-                0.5, 0.4, -0.2, 1.0, 0.4, 0.4, -0.5, 0.4, -0.2, 1.0, 1.0, 0.4,
+                0.5, 0.4, -0.2, 1.0, 0.4, 0.4, 
+               -0.5, 0.4, -0.2, 1.0, 1.0, 0.4,
                 0.0, -0.6, -0.2, 1.0, 1.0, 0.4,
-                0.0, 0.5, 0.0, 0.4, 0.4, 1.0, -0.5, -0.5, 0.0, 0.4, 0.4, 1.0,
+                0.0, 0.5, 0.0, 0.4, 0.4, 1.0, 
+               -0.5, -0.5, 0.0, 0.4, 0.4, 1.0,
                 0.5, -0.5, 0.0, 1.0, 0.4, 0.4
             ]);
 
@@ -63,31 +68,40 @@ define(['lodash', 'q', 'glm', 'common/viewUtil', 'facades/boardFacade'],
             var u_ViewMatrix = gl.getUniformLocation(gl.program, 'u_ViewMatrix');
 
             var viewMatrix = new Matrix4();
-            viewMatrix.setLookAt(0.20, 0.25, 0.25, 0, 0, 0, 0, 0, 1);
+            //eye, look-at, head direction
+            viewMatrix.setLookAt(0.0, 0.0, 1.0, 0, 0, 0, 0, 1, 0);
 
             gl.uniformMatrix4fv(u_ViewMatrix, false, viewMatrix.elements);
 
         }
 
-        function _initModelMatrix(gl) {  
+        function _initModelMatrix(gl) {
             var u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_ModelMatrix');
 
             var modelMatrix = new Matrix4();
-            modelMatrix.setRotate(-80, 0, 0, 1);
+            modelMatrix.setRotate(0, 0, 0, 1);
             gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
         }
 
-        function _initProjMatrix(gl) {
+        function _initProjMatrix(gl, g_near, g_far) {
             var u_ProjMatrix = gl.getUniformLocation(gl.program, 'u_ProjMatrix');
 
             var projMatrix = new Matrix4();
-            projMatrix.setOrtho();
+            //left, right, bottom, top, near, far
+            projMatrix.setOrtho(-1.0, 1.0, -1.0, 1.0, g_near, g_far);
+            //projMatrix.setPerspective(30, canvas.width / canvas.height, 1, 100);
+            gl.uniformMatrix4fv(u_ProjMatrix, false, projMatrix.elements);
+        }
+
+        function _draw(gl, n) {
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.drawArrays(gl.TRIANGLES, 0, n);
         }
 
         // Public Methods
         function load() {
             return boardFacade.getData().then(function() {
-                var canvas = document.getElementById('webgl');
+                canvas = document.getElementById('webgl');
 
                 var gl = getWebGLContext(canvas);
 
@@ -105,7 +119,24 @@ define(['lodash', 'q', 'glm', 'common/viewUtil', 'facades/boardFacade'],
                 _initModelMatrix(gl);
                 _initViewMatrix(gl);
 
-                gl.drawArrays(gl.TRIANGLES, 0, n);
+                var g_near = 0.0, g_far = 0.5;
+                _initProjMatrix(gl, g_near, g_far);
+
+                _draw(gl, n);
+
+                document.onkeydown = function(ev) {
+                    switch(ev.keyCode) {
+                        case  39: g_near += 0.1; break;
+                        case  37: g_near -= 0.1; break;
+                        case  38: g_far  += 0.1; break;
+                        case  40: g_far  -= 0.1; break;
+                        default: return;
+                    }
+
+                    _initProjMatrix(gl, g_near, g_far);
+                    _draw(gl, n);
+                };
+                
 
                 viewUtil.showScreen('home-screen');
             });
