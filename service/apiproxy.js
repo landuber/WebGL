@@ -4,6 +4,7 @@ var url = require('url');
 var http = require('http');
 
 var $URL = "http://cloud.earthmine.com/service",
+  $S3URL = "http://s3.earthmine.com/tile",
   $KEY = "qzuhqdib7ugtvlvxymjfn26a",
   $SECRET = "jyH8f9wIQ5";
 
@@ -51,4 +52,12 @@ exports.route = function(app) {
       }
     }).pipe(res);
   });
+
+  app.get('/tile/:path', function(req, res) {
+    request({
+      method: "GET",
+      url: $S3URL + unescape(req.params.path)
+    }).pipe(res);
+  });
+
 };

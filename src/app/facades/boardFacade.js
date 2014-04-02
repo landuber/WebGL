@@ -19,7 +19,7 @@ define(['jquery', 'q', 'common/settings', 'common/workerFacade'],
               "height": 512
             },
             "field-of-view": 89.8,
-            "search-radius": 50,
+            "search-radius": 1000,
             "max-results": "25"
           }
         }
@@ -92,20 +92,12 @@ define(['jquery', 'q', 'common/settings', 'common/workerFacade'],
             var panorama = data.result.panoramas[0],
               panoramaId = panorama['pano-id'];
 
-            return getViewUrls(longitude, latitude)
-              .then(function(views) {
-                views.forEach(function(view) {
-                  view.url.href = settings.assetRoot + "/" + view.url.href.split('=')[1];
-                });
-                return {
-                  panoId: panorama['pano-id'],
-                  location: panorama['location'],
-                  panoramaOrientation: panorama['pano-orientation'],
-                  views: views
-                };
-              });
-
-
+            return {
+              panoId: panoramaId,
+              location: panorama['location'],
+              panoramaOrientation: panorama['pano-orientation'],
+              tileUrls: _generateTileUrls(panoramaId)
+            };
           } else {
             throw new Error('location unreachable!');
           }
@@ -117,17 +109,17 @@ define(['jquery', 'q', 'common/settings', 'common/workerFacade'],
     }
 
     function _generateTileUrls(panoramaId) {
-      var urlPrefix = settings.assetRoot + "/" +
+      var urlPrefix = "/" +
         panoramaId.substr(0, 3) + "/" +
         panoramaId.substr(3, 3) + "/" +
         panoramaId.substr(6, 3) + "/" +
         panoramaId;
 
       var tileUrls = {};
-      var cubeFaces = ["front", "left", "right", "up", "down", "bottom"];
+      var cubeFaces = ["front", "left", "right", "up", "down", "back"];
       cubeFaces.forEach(function(face) {
         tileUrls[face] = {
-          previewUrl: urlPrefix + "/" + face[0] + "/" + settings.levelPreview + "/00.jpg"
+          previewUrl:  settings.assetRoot + "/" + encodeURIComponent(urlPrefix + "/" + face[0] + "/" + settings.levelPreview + "/00.jpg")
         };
 
         settings.resolutionLevels.forEach(function(level, index) {
@@ -137,7 +129,7 @@ define(['jquery', 'q', 'common/settings', 'common/workerFacade'],
           for (var i = 0; i < rows; i++) {
             for (var j = 0; j < columns; j++) {
               var fileName = [i, j].join('');
-              tileUrls[face][level].push(urlPrefix + "/" + face[0] + "/" + level + "/" + fileName + ".jpg");
+              tileUrls[face][level].push(settings.assetRoot + "/" + encodeURIComponent(urlPrefix + "/" + face[0] + "/" + level + "/" + fileName + ".jpg"));
             }
           }
         });
