@@ -1,10 +1,42 @@
 define(['lodash', 'q', 'glm', 'common/viewUtil', 'facades/boardFacade'],
     function(_, Q, matrixUtil, viewUtil, boardFacade) {
 
-        var g_points = [],
-            g_colors = [];
 
-        var canvas;
+        var gl, canvas, a_Position, a_TexCoord, a_Sampler, a_MvpMatrix, mvpMatrix, currentAngle;
+
+        // number of points per single draw
+        var n = 6;
+
+        // buffers
+        var buffers = [],
+            texCoordBuffers = [],
+            indexBuffers = [],
+            textures = [];
+
+        // vertices represented as 4 dimensional vectors for the sake of transformation/translation math
+        var _vectors = [
+            new Vector4([1.0, 1.0, 1.0, 1.0]),
+            new Vector4([0.0, 1.0, 1.0, 1.0]),
+            new Vector4([0.0, 0.0, 1.0, 1.0]),
+            new Vector4([1.0, 0.0, 1.0, 1.0])
+        ];
+
+
+        var _rotationParams = {
+            "front": [0, 0, 1, 0],
+            "left": [90, 0, 1, 0],
+            "back": [180, 0, 1, 0],
+            "right": [-90, 0, 1, 0],
+            "up": [-90, 1, 0, 0],
+            "down": [90, 1, 0, 0]
+        };
+
+        var _translations = [
+            [0, 0, 0],
+            [-1, 0, 0],
+            [0, -1, 0],
+            [-1, -1, 0]
+        ];
 
         // Vertext Shader Program
         var VSHADER_SOURCE =
@@ -27,26 +59,24 @@ define(['lodash', 'q', 'glm', 'common/viewUtil', 'facades/boardFacade'],
             '}\n';
 
         // Init buffers
-        function _initVertexBuffers(gl, face, index) {
+        function _initVertexBuffers(face, index) {
 
             var vertices = new Float32Array(_initVertices(face, index));
-            _initVertexArrayBuffer(gl, vertices);
+            _initVertexArrayBuffer(vertices);
 
             var texCoords = new Float32Array([ // Texture coordinates
                 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0
             ]);
-            _initTextCoordArrayBuffer(gl, texCoords);
-
+            _initTextCoordArrayBuffer(texCoords);
 
             var indices = new Uint8Array([ // Indices of the vertices
                 0, 1, 2, 0, 2, 3
             ]);
-            _initElementArrayBuffer(gl, indices);
+            _initElementArrayBuffer(indices);
 
         }
-        var buffers = [];
 
-        function _initVertexArrayBuffer(gl, data) {
+        function _initVertexArrayBuffer(data) {
             var buffer = gl.createBuffer(); // Create a buffer object
             buffers.push(buffer);
             if (!buffer) {
@@ -57,9 +87,7 @@ define(['lodash', 'q', 'glm', 'common/viewUtil', 'facades/boardFacade'],
             gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
         }
 
-        var texCoordBuffers = [];
-
-        function _initTextCoordArrayBuffer(gl, data) {
+        function _initTextCoordArrayBuffer(data) {
             var texCoordBuffer = gl.createBuffer(); // Create a buffer object
             texCoordBuffers.push(texCoordBuffer);
             if (!texCoordBuffer) {
@@ -70,9 +98,7 @@ define(['lodash', 'q', 'glm', 'common/viewUtil', 'facades/boardFacade'],
             gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
         }
 
-        var indexBuffers = [];
-
-        function _initElementArrayBuffer(gl, data) {
+        function _initElementArrayBuffer(data) {
             // Create a buffer object
             var indexBuffer = gl.createBuffer();
             indexBuffers.push(indexBuffer);
@@ -82,31 +108,6 @@ define(['lodash', 'q', 'glm', 'common/viewUtil', 'facades/boardFacade'],
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
             gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, data, gl.STATIC_DRAW);
         }
-
-        var _vectors = [
-            new Vector4([1.0, 1.0, 1.0, 1.0]),
-            new Vector4([0.0, 1.0, 1.0, 1.0]),
-            new Vector4([0.0, 0.0, 1.0, 1.0]),
-            new Vector4([1.0, 0.0, 1.0, 1.0])
-        ];
-
-
-
-        var _rotationParams = {
-            "front": [0, 0, 1, 0],
-            "left": [90, 0, 1, 0],
-            "back": [180, 0, 1, 0],
-            "right": [-90, 0, 1, 0],
-            "up": [-90, 1, 0, 0],
-            "down": [90, 1, 0, 0]
-        };
-
-        var _translations = [
-            [0, 0, 0],
-            [-1, 0, 0],
-            [0, -1, 0],
-            [-1, -1, 0]      
-        ];
 
         function _initVertices(face, index) {
             var elements = [];
@@ -126,49 +127,38 @@ define(['lodash', 'q', 'glm', 'common/viewUtil', 'facades/boardFacade'],
             return elements;
         }
 
-
-
-        function drawEach(gl, n, vertextBuffer, texCoordBuffer, indexBuffer, texture, a_Position, a_TexCoord, u_Sampler) {
-            gl.bindBuffer(gl.ARRAY_BUFFER, vertextBuffer);
+        function _drawEach(m) {
+            buffers[m], texCoordBuffers[m], indexBuffers[m], textures[m]
+            gl.bindBuffer(gl.ARRAY_BUFFER, buffers[m]);
             gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 0, 0);
             gl.enableVertexAttribArray(a_Position);
 
-            gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+            gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffers[m]);
             gl.vertexAttribPointer(a_TexCoord, 2, gl.FLOAT, false, 0, 0);
             gl.enableVertexAttribArray(a_TexCoord);
 
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffers[m]);
 
-            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.bindTexture(gl.TEXTURE_2D, textures[m]);
             gl.uniform1i(u_Sampler, 0);
-            _draw(gl, n);
-
-        }
-
-        function _draw(gl, n) {
-            //gl.clearColor(0.0, 0.0, 0.0, 1.0);
-            //gl.enable(gl.DEPTH_TEST);
-            //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             gl.drawElements(gl.TRIANGLES, n, gl.UNSIGNED_BYTE, 0);
-            //gl.bindTexture(gl.TEXTURE_2D, null);
         }
 
-        function _initMvpMatrix(gl) {
-            var u_MvpMatrix = gl.getUniformLocation(gl.program, 'u_MvpMatrix');
+        function _initMvpMatrix() {
 
             // Set the eye point and the viewing volume
-            var mvpMatrix = new Matrix4();
+            mvpMatrix = new Matrix4();
             // angle, aspect, near, far
             mvpMatrix.setPerspective(100, 1, 0.00001, 100);
-            mvpMatrix.lookAt(0, 0, 0, 0, 1, 0, 0, 0, -1);
+            mvpMatrix.lookAt(0, 0, 0, 0, 0, 1, 0, 1, 0);
+            mvpMatrix.rotate(currentAngle[0], 1.0, 0.0, 0.0); // x-axis
+            mvpMatrix.rotate(currentAngle[1], 0.0, 1.0, 0.0); // y-axis
 
             // Pass the model view projection matrix to u_MvpMatrix
             gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
         }
 
-        var textures = [];
-
-        function _initTextures(gl, n, tileUrl, u_Sampler) {
+        function _initTextures(tileUrl) {
             // Create a texture object
             var texture = gl.createTexture();
             textures.push(texture);
@@ -179,13 +169,52 @@ define(['lodash', 'q', 'glm', 'common/viewUtil', 'facades/boardFacade'],
 
             var image = new Image();
             image.onload = function() {
-                _loadTexture(gl, texture, u_Sampler, image, tileUrl);
+                _loadTexture(texture, image);
             };
             image.src = tileUrl;
 
         }
 
-        function _loadTexture(gl, texture, u_Sampler, image, tileUrl) {
+        function initEventHandlers() {
+            var dragging = false;
+            var lastX = -1,
+                lastY = -1;
+
+            canvas.onmousedown = function(ev) {
+                var x = ev.clientX,
+                    y = ev.clientY;
+
+                var rect = ev.target.getBoundingClientRect();
+                if (rect.left <= x && rect.right > x && rect.top <= y && rect.bottom > y) {
+                    dragging = true;
+                    lastX = x;
+                    lastY = y;
+                }
+            };
+
+            canvas.onmouseup = function() {
+                dragging = false;
+            };
+
+            canvas.onmousemove = function(ev) {
+                var x = ev.clientX,
+                    y = ev.clientY;
+
+                if (dragging) {
+                    var factorX = 100 / canvas.height; // The rotation ratio
+                    var factorY = 100 / canvas.width;
+                    var dx = factorX * (x - lastX);
+                    var dy = factorY * (y - lastY);
+
+                    // Limit x-axis rotation angle to -90 to 90 degrees
+                    currentAngle[0] = Math.max(Math.min(currentAngle[0] + dy, 90.0), -90.0); // working
+                    currentAngle[1] = currentAngle[1] - dx;
+                }
+                lastX = x, lastY = y;
+            };
+        }
+
+        function _loadTexture(texture, image) {
 
             gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -197,12 +226,16 @@ define(['lodash', 'q', 'glm', 'common/viewUtil', 'facades/boardFacade'],
 
         }
 
+        function _drawAll() {
+            _initMvpMatrix();
+            for (var m = 0; m < buffers.length; m++) {
+                _drawEach(m);
+            }
+        }
 
-
-        function _setUpBuffers(gl, face, index, tileUrl) {
-            var n = _initVertexBuffers(gl, face, index);
-            _initMvpMatrix(gl);
-            _initTextures(gl, n, tileUrl);
+        function _tick() {
+            _drawAll();
+            requestAnimationFrame(_tick, canvas);
         }
 
         // Public Methods
@@ -210,7 +243,9 @@ define(['lodash', 'q', 'glm', 'common/viewUtil', 'facades/boardFacade'],
             return boardFacade.getData().then(function() {
                 canvas = document.getElementById('webgl');
 
-                var gl = getWebGLContext(canvas);
+                currentAngle = [0.0, 0.0]; // [x-axis, y-axis] degrees
+                initEventHandlers(canvas, currentAngle);
+                gl = getWebGLContext(canvas);
 
                 if (!gl) {
                     console.log('Failed to get the rendering context for WebGL');
@@ -231,10 +266,10 @@ define(['lodash', 'q', 'glm', 'common/viewUtil', 'facades/boardFacade'],
                 gl.activeTexture(gl.TEXTURE0);
                 //testing ajax
 
-                var a_Position = gl.getAttribLocation(gl.program, 'a_Position');
-                var a_TexCoord = gl.getAttribLocation(gl.program, 'a_TexCoord');
-                var u_Sampler = gl.getUniformLocation(gl.program, 'u_Sampler');
-
+                a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+                a_TexCoord = gl.getAttribLocation(gl.program, 'a_TexCoord');
+                u_Sampler = gl.getUniformLocation(gl.program, 'u_Sampler');
+                u_MvpMatrix = gl.getUniformLocation(gl.program, 'u_MvpMatrix');
 
 
                 // Unbind the buffer object
@@ -242,40 +277,27 @@ define(['lodash', 'q', 'glm', 'common/viewUtil', 'facades/boardFacade'],
 
 
 
-                _initMvpMatrix(gl);
-
-
-
-                var lon = -117.16082,
+                var lon = -117.16083,
                     lat = 32.70710;
                 boardFacade.getPanoramas(lon, lat)
                     .then(function(panorama) {
                         for (var face in panorama.tileUrls) {
                             panorama.tileUrls[face].z_1.forEach(function(tileUrl, index) {
-                               
-                                    gl.useProgram(gl.program);
-                                    _initVertexBuffers(gl, face, index);
-                                    _initTextures(gl, 6, tileUrl, u_Sampler);
-                                
+                                gl.useProgram(gl.program);
+                                _initVertexBuffers(face, index);
+                                _initTextures(tileUrl);
 
                             });
                         }
-
-                        setTimeout(function() {
-                            for (var m = 0; m < buffers.length; m++) {
-                                drawEach(gl, 6, buffers[m], texCoordBuffers[m], indexBuffers[m], textures[m], a_Position, a_TexCoord, u_Sampler);
-                            }
-                        }, 100);
-
+                        _tick();
                     });
-
 
                 viewUtil.showScreen('home-screen');
             });
         }
 
 
-
+        //return the module
         return {
             load: load
         };
